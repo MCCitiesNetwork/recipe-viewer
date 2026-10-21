@@ -1,6 +1,7 @@
 package io.github.md5sha256.recipeviewer;
 
 import io.github.md5sha256.recipeviewer.util.RecipeView;
+import io.github.md5sha256.recipeviewer.gui.RecipeCategoryGui;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -27,14 +28,17 @@ public class InventoryListener implements Listener {
     }
 
     private boolean shouldCancel(@Nullable Inventory inventory) {
-        return inventory != null && inventory.getHolder() instanceof RecipeView;
+        return inventory != null && (inventory.getHolder() instanceof RecipeView
+                || inventory.getHolder() instanceof RecipeCategoryGui);
     }
 
     private boolean shouldCancel(@NotNull InventoryView view) {
         return shouldCancel(view.getTopInventory()) || shouldCancel(view.getBottomInventory());
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    // Run after IF's NORMAL callback so navigation still works. Protect the view
+    // independently even when IF throws before its global click handler runs.
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
         // Need to check the view because IF does not trigger the global
         // click listener if the clicked inventory is not a Gui
@@ -51,14 +55,14 @@ public class InventoryListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryDrag(InventoryDragEvent event) {
         if (shouldCancel(event.getView())) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryCreative(InventoryCreativeEvent event) {
         if (shouldCancel(event.getView())) {
             event.setCancelled(true);
